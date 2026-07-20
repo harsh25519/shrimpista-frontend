@@ -1,0 +1,32 @@
+services:
+  shrimpista-frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        # Baked-in fallback used only if API_BASE_URL isn't set at runtime below.
+        VITE_API_BASE_URL: ${VITE_API_BASE_URL:-http://localhost:8081}
+        VITE_APP_ORIGIN: ${VITE_APP_ORIGIN:-http://localhost:8081}
+    image: shrimpista-frontend:latest
+    container_name: shrimpista-frontend
+    restart: unless-stopped
+    ports:
+      - "${FRONTEND_PORT:-5173}:80"
+    environment:
+      # Read by docker-entrypoint.sh at container start (no rebuild needed to repoint the backend).
+      API_BASE_URL: ${API_BASE_URL:-http://localhost:8081}
+      APP_ORIGIN: ${APP_ORIGIN:-http://localhost:8081}
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:80/healthz"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
+    networks:
+      - shrimpista-net
+
+networks:
+  shrimpista-net:
+    # Set to `external: true` and reuse the Spring Boot backend's compose network
+    # name here if you want to run frontend + backend together on one Docker host.
+    driver: bridge
