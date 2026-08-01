@@ -14,21 +14,28 @@ import NotFound from '@/pages/NotFound'
 import { useAuthStore } from '@/store/authStore'
 import { FullPageSpinner } from '@/components/Spinner'
 import { authApi } from '@/api/auth'
+import { urlsApi } from '@/api/urls'
 
 export default function App() {
   const [isInitializing, setIsInitializing] = useState(true)
   const setSession = useAuthStore((s) => s.setSession)
-  // 1. Intercept the app load and ask the backend for the current session
-  //    The backend sets HttpOnly cookies during OAuth; here we call
-  //    `GET /auth/me` (with credentials) to hydrate the frontend store.
+  // 1. Intercept the app load and detect cookie-based session.
+  // If the backend set HttpOnly cookies, we can't read them from JS. Instead
+  // try a lightweight authenticated request; if it succeeds, mark the
+  // frontend as authenticated (no tokens needed in the SPA store).
   useEffect(() => {
     let cancelled = false
     ;(async () => {
       try {
-        const auth = await authApi.me()
-        if (!cancelled) setSession(auth)
+        // Try an authenticated endpoint that the backend protects
+        await urlsApi.listMine(0, 1)
+        if (!cancelled) {
+          // backend-authenticated via cookies — set frontend flag
+          ;(await import('@/store/authStore'))
+          useAuthStore.getState().markAuthenticated()
+        }
       } catch {
-        // Not authenticated or request failed — leave store cleared
+        // Not authenticated / request failed — leave store cleared
       } finally {
         if (!cancelled) setIsInitializing(false)
       }

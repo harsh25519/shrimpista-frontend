@@ -36,6 +36,7 @@ interface AuthState {
   isAuthenticated: boolean
   isAdmin: boolean
   setSession: (auth: AuthResponse) => void
+  markAuthenticated: () => void
   clearSession: () => void
 }
 
@@ -60,6 +61,15 @@ export const useAuthStore = create<AuthState>()(
           isAdmin: roles.some((r) => r === 'ADMIN' || r === 'ROLE_ADMIN'),
         })
       },
+      markAuthenticated: () =>
+        set({
+          accessToken: null,
+          refreshToken: null,
+          userId: null,
+          roles: [],
+          isAuthenticated: true,
+          isAdmin: false,
+        }),
       clearSession: () =>
         set({
           accessToken: null,
