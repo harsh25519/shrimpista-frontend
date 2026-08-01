@@ -27,8 +27,10 @@ export const apiClient = axios.create({
 
 apiClient.interceptors.request.use((config) => {
   const { accessToken } = useAuthStore.getState()
+  // Axios headers is a plain object. Don't use `.set` which exists on Fetch Headers.
+  config.headers = config.headers || {}
   if (accessToken) {
-    config.headers.set('Authorization', `Bearer ${accessToken}`)
+    ;(config.headers as Record<string, string>)['Authorization'] = `Bearer ${accessToken}`
   }
   return config
 })
@@ -44,12 +46,12 @@ const refreshClient = axios.create({
 let refreshPromise: Promise<string | null> | null = null
 
 async function refreshAccessToken(): Promise<string | null> {
-  const { refreshToken, setSession, clearSession } = useAuthStore.getState()
-  if (!refreshToken) return null
+  const { setSession, clearSession } = useAuthStore.getState()
 
   if (!refreshPromise) {
+    // Try a cookie-based refresh first: backend can read the HttpOnly refresh cookie.
     refreshPromise = refreshClient
-      .post<AuthResponse>('/auth/refresh', { refreshToken })
+      .post<AuthResponse>('/auth/refresh')
       .then((res) => {
         setSession(res.data)
         return res.data.accessToken

@@ -13,7 +13,6 @@ import AdminPanel from '@/pages/AdminPanel'
 import NotFound from '@/pages/NotFound'
 import { useAuthStore } from '@/store/authStore'
 import { FullPageSpinner } from '@/components/Spinner'
-import { authApi } from '@/api/auth'
 import { urlsApi } from '@/api/urls'
 
 export default function App() {
