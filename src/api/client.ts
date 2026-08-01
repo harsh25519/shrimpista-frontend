@@ -22,6 +22,7 @@ export const apiClient = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
+  withCredentials: true,
 })
 
 apiClient.interceptors.request.use((config) => {
@@ -37,6 +38,7 @@ apiClient.interceptors.request.use((config) => {
 const refreshClient = axios.create({
   baseURL: API_BASE_URL,
   headers: { 'Content-Type': 'application/json' },
+  withCredentials: true,
 })
 
 let refreshPromise: Promise<string | null> | null = null

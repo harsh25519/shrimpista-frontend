@@ -13,32 +13,30 @@ import AdminPanel from '@/pages/AdminPanel'
 import NotFound from '@/pages/NotFound'
 import { useAuthStore } from '@/store/authStore'
 import { FullPageSpinner } from '@/components/Spinner'
+import { authApi } from '@/api/auth'
 
 export default function App() {
   const [isInitializing, setIsInitializing] = useState(true)
   const setSession = useAuthStore((s) => s.setSession)
-
-  // 1. Intercept the app load and check for backend cookies
+  // 1. Intercept the app load and ask the backend for the current session
+  //    The backend sets HttpOnly cookies during OAuth; here we call
+  //    `GET /auth/me` (with credentials) to hydrate the frontend store.
   useEffect(() => {
-    const getCookie = (name: string) => {
-      const value = `; ${document.cookie}`
-      const parts = value.split(`; ${name}=`)
-      if (parts.length === 2) return parts.pop()?.split(';').shift()
-      return null
-    }
+    let cancelled = false
+    ;(async () => {
+      try {
+        const auth = await authApi.me()
+        if (!cancelled) setSession(auth)
+      } catch {
+        // Not authenticated or request failed — leave store cleared
+      } finally {
+        if (!cancelled) setIsInitializing(false)
+      }
+    })()
 
-    const token = getCookie('accessToken')
-    
-    if (token) {
-      // 2. We found a token! Save it to global state so <ProtectedRoute> allows us in
-      setSession({ accessToken: token } as any) 
-      
-      // 3. Delete the cookie for security
-      document.cookie = 'accessToken=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;'
+    return () => {
+      cancelled = true
     }
-    
-    // 4. Initialization complete, allow the router to render
-    setIsInitializing(false)
   }, [setSession])
 
   // 5. Show a spinner while checking cookies

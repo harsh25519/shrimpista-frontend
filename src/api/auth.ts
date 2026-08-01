@@ -18,4 +18,7 @@ export const authApi = {
 
   forgotPassword: (email: string) =>
     apiClient.post<MessageResponse>('/auth/forgot-password', { email }).then((r) => r.data),
+
+  /** Returns current authenticated session based on HttpOnly cookies */
+  me: () => apiClient.get<AuthResponse>('/auth/me').then((r) => r.data),
 }
