@@ -34,8 +34,23 @@ export default function App() {
           ;(await import('@/store/authStore'))
           useAuthStore.getState().markAuthenticated()
         }
-      } catch {
+      } catch (err: any) {
         // Not authenticated / request failed — leave store cleared
+        // TEMP DEBUG: log full axios error details to diagnose server 500 / missing cookies
+        // eslint-disable-next-line no-console
+        console.error('Auth check failed', err)
+        // axios error details (if available)
+        if (err?.response) {
+          // eslint-disable-next-line no-console
+          console.error('Response status:', err.response.status)
+          // eslint-disable-next-line no-console
+          console.error('Response headers:', err.response.headers)
+          // eslint-disable-next-line no-console
+          console.error('Response data:', err.response.data)
+        }
+        // Also log browser cookies (note: HttpOnly cookies won't appear here)
+        // eslint-disable-next-line no-console
+        console.log('document.cookie:', document.cookie)
       } finally {
         if (!cancelled) setIsInitializing(false)
       }
