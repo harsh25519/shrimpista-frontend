@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { } from 'react'
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import { Toaster } from 'react-hot-toast'
 import { Navbar } from '@/components/Navbar'
@@ -11,62 +11,12 @@ import Dashboard from '@/pages/Dashboard'
 import LinkDetail from '@/pages/LinkDetail'
 import AdminPanel from '@/pages/AdminPanel'
 import NotFound from '@/pages/NotFound'
-import { useAuthStore } from '@/store/authStore'
-import { FullPageSpinner } from '@/components/Spinner'
-import { urlsApi } from '@/api/urls'
+import { AuthProvider } from '@/context/AuthContext'
 
 export default function App() {
-  const [isInitializing, setIsInitializing] = useState(true)
-  const setSession = useAuthStore((s) => s.setSession)
-  // 1. Intercept the app load and detect cookie-based session.
-  // If the backend set HttpOnly cookies, we can't read them from JS. Instead
-  // try a lightweight authenticated request; if it succeeds, mark the
-  // frontend as authenticated (no tokens needed in the SPA store).
-  useEffect(() => {
-    let cancelled = false
-    ;(async () => {
-      try {
-        // Try an authenticated endpoint that the backend protects
-        await urlsApi.listMine(0, 1)
-        if (!cancelled) {
-          // backend-authenticated via cookies — set frontend flag
-          ;(await import('@/store/authStore'))
-          useAuthStore.getState().markAuthenticated()
-        }
-      } catch (err: any) {
-        // Not authenticated / request failed — leave store cleared
-        // TEMP DEBUG: log full axios error details to diagnose server 500 / missing cookies
-        // eslint-disable-next-line no-console
-        console.error('Auth check failed', err)
-        // axios error details (if available)
-        if (err?.response) {
-          // eslint-disable-next-line no-console
-          console.error('Response status:', err.response.status)
-          // eslint-disable-next-line no-console
-          console.error('Response headers:', err.response.headers)
-          // eslint-disable-next-line no-console
-          console.error('Response data:', err.response.data)
-        }
-        // Also log browser cookies (note: HttpOnly cookies won't appear here)
-        // eslint-disable-next-line no-console
-        console.log('document.cookie:', document.cookie)
-      } finally {
-        if (!cancelled) setIsInitializing(false)
-      }
-    })()
-
-    return () => {
-      cancelled = true
-    }
-  }, [setSession])
-
-  // 5. Show a spinner while checking cookies
-  if (isInitializing) {
-    return <FullPageSpinner />
-  }
-
   return (
-    <BrowserRouter>
+    <AuthProvider>
+      <BrowserRouter>
       <Toaster
         position="top-right"
         toastOptions={{
@@ -118,6 +68,7 @@ export default function App() {
           <Route path="*" element={<NotFound />} />
         </Routes>
       </main>
-    </BrowserRouter>
+      </BrowserRouter>
+    </AuthProvider>
   )
 }
